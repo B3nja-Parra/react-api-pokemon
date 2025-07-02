@@ -65,3 +65,96 @@
   padding: 15px;
   border-radius: 8px;
 }
+
+input {
+  padding: 8px;
+  font-size: 1em;
+  margin-right: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 8px 12px;
+  margin-right: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+
+input {
+  padding: 8px;
+  font-size: 1em;
+  margin-right: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 250px;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.autocomplete {
+  position: relative;
+  display: inline-block;
+  width: 300px;
+}
+
+.sugerencias {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 10;
+  border-radius: 0 0 5px 5px;
+}
+
+.sugerencias div {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.sugerencias div:hover {
+  background-color: #eee;
+}
+
+.tipos {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.tipo {
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9em;
+  font-weight: bold;
+  text-transform: capitalize;
+}

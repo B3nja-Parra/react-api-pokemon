@@ -1,70 +1,236 @@
 import React, { useState, useEffect } from 'react';
-import './PokemonFetcher.css'; // Opcional: para estilos básicos
+import './PokemonFetcher.css';
+
+const traduccionesTipos = {
+  normal: "Normal",
+  fire: "Fuego",
+  water: "Agua",
+  grass: "Planta",
+  electric: "Eléctrico",
+  ice: "Hielo",
+  fighting: "Lucha",
+  poison: "Veneno",
+  ground: "Tierra",
+  flying: "Volador",
+  psychic: "Psíquico",
+  bug: "Bicho",
+  rock: "Roca",
+  ghost: "Fantasma",
+  dark: "Siniestro",
+  dragon: "Dragón",
+  steel: "Acero",
+  fairy: "Hada",
+};
+
+const tipoEspToEng = {
+  normal: "normal",
+  fuego: "fire",
+  agua: "water",
+  planta: "grass",
+  eléctrico: "electric",
+  hielo: "ice",
+  lucha: "fighting",
+  veneno: "poison",
+  tierra: "ground",
+  volador: "flying",
+  psíquico: "psychic",
+  bicho: "bug",
+  roca: "rock",
+  fantasma: "ghost",
+  siniestro: "dark",
+  dragón: "dragon",
+  acero: "steel",
+  hada: "fairy",
+};
+
+const coloresTipo = {
+  normal: "#A8A878",
+  fire: "#F08030",
+  water: "#6890F0",
+  grass: "#78C850",
+  electric: "#F8D030",
+  ice: "#98D8D8",
+  fighting: "#C03028",
+  poison: "#A040A0",
+  ground: "#E0C068",
+  flying: "#A890F0",
+  psychic: "#F85888",
+  bug: "#A8B820",
+  rock: "#B8A038",
+  ghost: "#705898",
+  dark: "#705848",
+  dragon: "#7038F8",
+  steel: "#B8B8D0",
+  fairy: "#EE99AC"
+};
 
 const PokemonFetcher = () => {
   const [pokemones, setPokemones] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
-useEffect(() => {
-    const fetchPokemones = async () => {
+  const [busqueda, setBusqueda] = useState('');
+  const [sugerencias, setSugerencias] = useState([]);
+  const [nombresPokemon, setNombresPokemon] = useState([]);
+
+  useEffect(() => {
+    const fetchNombresPokemon = async () => {
       try {
-        setCargando(true);
-        setError(null);
-        const fetchedPokemones = [];
-        const pokemonIds = new Set(); // Usar un Set para asegurar IDs únicos
-
-        // Generar 4 IDs de Pokémon únicos aleatorios
-        while (pokemonIds.size < 4) {
-          const randomId = Math.floor(Math.random() * 898) + 1; // 898 es el número actual de Pokémon en la PokeAPI (puedes ajustarlo)
-          pokemonIds.add(randomId);
-        }
-
-        // Convertir el Set a un array para iterar
-        const idsArray = Array.from(pokemonIds);
-
-        for (const id of idsArray) {
-          const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-          if (!response.ok) {
-            throw new Error(`Error al cargar el Pokémon con ID ${id}: ${response.statusText}`);
-          }
-          const data = await response.json();
-          fetchedPokemones.push({
-            id: data.id,
-            nombre: data.name,
-            imagen: data.sprites.front_default,
-            tipos: data.types.map(typeInfo => typeInfo.type.name),
-          });
-        }
-        setPokemones(fetchedPokemones);
+        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=898');
+        const data = await res.json();
+        const nombres = data.results.map(p => p.name);
+        setNombresPokemon(nombres);
       } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
+        console.error("Error cargando nombres:", err);
       }
     };
+    fetchNombresPokemon();
+    fetchPokemonesAleatorios();
+  }, []);
 
-    fetchPokemones();
-  }, []); // El array vacío asegura que se ejecute solo una vez al montar el componente
+  const fetchPokemonesAleatorios = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const fetchedPokemones = [];
+      const pokemonIds = new Set();
 
-  if (cargando) {
-    return <div className="pokemon-container">Cargando Pokémon...</div>;
-  }
+      while (pokemonIds.size < 4) {
+        const randomId = Math.floor(Math.random() * 898) + 1;
+        pokemonIds.add(randomId);
+      }
 
-  if (error) {
-    return <div className="pokemon-container error">Error: {error}</div>;
-  }
+      for (const id of pokemonIds) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await res.json();
+        fetchedPokemones.push({
+          id: data.id,
+          nombre: data.name,
+          imagen: data.sprites.front_default,
+          tipos: data.types.map(t => t.type.name),
+        });
+      }
+
+      setPokemones(fetchedPokemones);
+    } catch (err) {
+      setError('Error al obtener pokemones aleatorios.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const buscarPokemon = async (texto = busqueda) => {
+    if (!texto.trim()) return;
+
+    try {
+      setCargando(true);
+      setError(null);
+
+      const textoLower = texto.toLowerCase();
+      const tipoTraducido = tipoEspToEng[textoLower] || textoLower;
+
+      // Buscar por tipo
+      const resTipo = await fetch(`https://pokeapi.co/api/v2/type/${tipoTraducido}`);
+      if (resTipo.ok) {
+        const dataTipo = await resTipo.json();
+        const primeros5 = dataTipo.pokemon.slice(0, 5);
+
+        const detalles = await Promise.all(
+          primeros5.map(p => fetch(p.pokemon.url).then(r => r.json()))
+        );
+
+        const resultado = detalles.map(p => ({
+          id: p.id,
+          nombre: p.name,
+          imagen: p.sprites.front_default,
+          tipos: p.types.map(t => t.type.name),
+        }));
+
+        setPokemones(resultado);
+        return;
+      }
+
+      // Buscar por nombre
+      const resNombre = await fetch(`https://pokeapi.co/api/v2/pokemon/${textoLower}`);
+      if (resNombre.ok) {
+        const data = await resNombre.json();
+        setPokemones([{
+          id: data.id,
+          nombre: data.name,
+          imagen: data.sprites.front_default,
+          tipos: data.types.map(t => t.type.name),
+        }]);
+      } else {
+        throw new Error('No se encontró el Pokémon.');
+      }
+    } catch (err) {
+      setError('No se encontró el Pokémon o tipo.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const texto = e.target.value;
+    setBusqueda(texto);
+
+    if (texto.length > 0) {
+      const sugerenciasFiltradas = nombresPokemon.filter(nombre =>
+        nombre.toLowerCase().includes(texto.toLowerCase())
+      ).slice(0, 5);
+      setSugerencias(sugerenciasFiltradas);
+    } else {
+      setSugerencias([]);
+    }
+  };
+
+  const seleccionarSugerencia = (nombre) => {
+    setBusqueda(nombre);
+    setSugerencias([]);
+    buscarPokemon(nombre);
+  };
 
   return (
     <div className='pokemon-container'>
-      <h2>Tus 4 Pokémon Aleatorios</h2>
-      <div className="pokemon-list"> 
+      <h2>Buscar Pokémon</h2>
+
+      <div className="autocomplete">
+        <input
+          type="text"
+          placeholder="Nombre o tipo (fuego, agua, planta...)"
+          value={busqueda}
+          onChange={handleInputChange}
+        />
+        <div className="sugerencias">
+          {sugerencias.map((sug, idx) => (
+            <div key={idx} onClick={() => seleccionarSugerencia(sug)}>
+              {sug}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={() => buscarPokemon()}>Buscar</button>
+      <button onClick={fetchPokemonesAleatorios}>Aleatorios</button>
+
+      {cargando && <p>Cargando...</p>}
+      {error && <p className="error">{error}</p>}
+
+      <div className="pokemon-list">
         {pokemones.map(pokemon => (
           <div key={pokemon.id} className="pokemon-card">
             <h3>{pokemon.nombre.charAt(0).toUpperCase() + pokemon.nombre.slice(1)}</h3>
             <img src={pokemon.imagen} alt={pokemon.nombre} />
-            <p>
-              **Tipos:** {pokemon.tipos.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}
-            </p>
+            <div className="tipos">
+              {pokemon.tipos.map(tipo => (
+                <span
+                  key={tipo}
+                  className="tipo"
+                  style={{ backgroundColor: coloresTipo[tipo] || "#777" }}
+                >
+                  {traduccionesTipos[tipo] || tipo}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>

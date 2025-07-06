@@ -1,10 +1,14 @@
+import React from 'react';
 import PokemonFetcher from './PokemonFetcher.jsx';
-function App(){
+import './App.css';
+
+
+function App() {
   return (
-    <>
-    <h1>Conoce a tu Pokemones</h1>
-    <PokemonFetcher/>
-    </>
+    <div className="contenedor-principal">
+      <h1 className="titulo-principal">Conoce a tu Pokemones</h1>
+      <PokemonFetcher />
+    </div>
   );
 }
 
